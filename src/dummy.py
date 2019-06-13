@@ -26,4 +26,4 @@ model.fit(x_train, y_train)
 # Any results you write to the current directory are saved as output.
 train_pred = model.predict(x_train)
 test_pred = pd.DataFrame(model.predict(x_test))
-test_pred.to_csv("/lhome/nriahid/Documents/automl2019-kaggle/data/dummy_submitted_from_kernel.csv", header=["AveragePrice"], index_label="ID")
+test_pred.to_csv("/lhome/nriahid/Documents/automl2019-kaggle/result/dummy_submitted_from_kernel.csv", header=["AveragePrice"], index_label="ID")
