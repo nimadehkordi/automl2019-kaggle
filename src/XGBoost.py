@@ -44,10 +44,10 @@ def get_combined_data():
   return combined, train_y
 
 #Load train and test data into pandas DataFrames
-train_x, train_y ,test_x = get_data()
+train_x, target ,test_x = get_data()
 
 #Combine train and test data to process them together
-combined, train_y = get_combined_data()
+combined, target = get_combined_data()
 
 def get_cols_with_no_nans(df,col_type):
     '''
@@ -104,50 +104,15 @@ def split_combined():
 
 train, test = split_combined()
 
-NN_model = Sequential()
+train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.25, random_state = 14)
 
-# The Input Layer :
-NN_model.add(Dense(128, kernel_initializer='normal',input_dim = train.shape[1], activation='relu'))
+XGBModel = XGBRegressor()
+XGBModel.fit(train_X,train_y , verbose=False)
 
-# The Hidden Layers :
-NN_model.add(Dense(256, kernel_initializer='normal',activation='relu'))
-#NN_model.add(Dense(256, kernel_initializer='normal',activation='relu'))
-NN_model.add(Dense(256, kernel_initializer='normal',activation='relu'))
+# Get the mean absolute error on the validation data :
+XGBpredictions = XGBModel.predict(val_X)
+MAE = mean_absolute_error(val_y , XGBpredictions)
+print('XGBoost validation MAE = ',MAE)
 
-
-#NN_model.add(Conv2D(64, kernel_initializer='normal', kernel_size=(3, 3), activation='relu', padding='same'))
-#NN_model.add(Conv2D(64, kernel_initializer='normal', kernel_size=(3, 3), activation='relu', padding='same'))
-#NN_model.add(MaxPooling2D(pool_size=(2, 2)))
-#NN_model.add(BatchNormalization())
-#NN_model.add(Flatten())
-#NN_model.add(Dense(512, kernel_initializer='normal', activation='relu'))
-#NN_model.add(Dropout(0.5))
-
-
-# The Output Layer :
-NN_model.add(Dense(1, kernel_initializer='normal',activation='linear'))
-
-
-# Compile the network :
-NN_model.compile(loss=tf.keras.metrics.mean_squared_error, optimizer='rmsprop', metrics=[tf.keras.metrics.RootMeanSquaredError(name='rmse')])
-NN_model.summary()
-
-
-checkpoint_name = 'Weights.hdf5' 
-checkpoint = ModelCheckpoint(checkpoint_name, monitor='val_loss', verbose = 1, save_best_only = True, mode ='auto')
-callbacks_list = [checkpoint]
-
-NN_model.fit(train, train_y, epochs=500, batch_size=32, validation_split = 0.2, callbacks=callbacks_list)
-
-# Load wights file of the best model :
-wights_file = 'Weights.hdf5' # choose the best checkpoint 
-NN_model.load_weights(wights_file) # load it
-NN_model.compile(loss=tf.keras.metrics.mean_squared_error, optimizer='adam', metrics=[tf.keras.metrics.RootMeanSquaredError(name='rmse')])
-
-def make_submission(prediction, sub_name):
-  my_submission = pd.DataFrame({'ID':pd.read_csv('/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.csv').index,'AveragePrice':prediction})
-  my_submission.to_csv('/lhome/nriahid/Documents/automl2019-kaggle/result/{}'.format(sub_name),index=False)
-  print('A submission file has been made')
-
-predictions = NN_model.predict(test)
-make_submission(predictions[:,0],'submission(NN).csv')
+XGBpredictions = XGBModel.predict(test)
+make_submission(XGBpredictions,'/lhome/nriahid/Documents/automl2019-kaggle/result/Submission(XGB).csv')
