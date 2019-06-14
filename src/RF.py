@@ -114,5 +114,11 @@ predicted_prices = model.predict(val_X)
 MAE = mean_absolute_error(val_y , predicted_prices)
 print('Random forest validation MAE = ', MAE)
 
+
+def make_submission(prediction, sub_name):
+  my_submission = pd.DataFrame({'ID':pd.read_csv('/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.csv').index,'AveragePrice':prediction})
+  my_submission.to_csv('/lhome/nriahid/Documents/automl2019-kaggle/result/{}'.format(sub_name),index=False)
+  print('A submission file has been made')
+
 predicted_prices = model.predict(test)
-make_submission(predicted_prices,'/lhome/nriahid/Documents/automl2019-kaggle/result/Submission(RF).csv')
+make_submission(predicted_prices,'Submission(RF).csv')

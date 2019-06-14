@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error 
 from matplotlib import pyplot as plt
+from sklearn.model_selection import GridSearchCV
 import seaborn as sb
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -17,6 +18,8 @@ warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 from xgboost import XGBRegressor
 import os
+from sklearn.externals.joblib import parallel_backend
+
 
 print(os.listdir("/lhome/nriahid/Documents/automl2019-kaggle/data"))
 
@@ -106,13 +109,44 @@ train, test = split_combined()
 
 train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.25, random_state = 14)
 
-XGBModel = XGBRegressor()
-XGBModel.fit(train_X,train_y , verbose=False)
+xgb1 = XGBRegressor()
+
+parameters = {'nthread':[4], #when use hyperthread, xgboost may become slower
+              'objective':['reg:linear'],
+              'learning_rate': [.03, .07, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30], #so called `eta` value
+              'max_depth': [3, 4, 5, 6, 8, 10, 12, 15],
+              'min_child_weight': [1, 3, 5, 7],
+              'gamma' : [ 0.0, 0.1, 0.2 , 0.3, 0.4 ],
+              'silent': [1],
+              'subsample': [0.7],
+              'colsample_bytree': [0.3, 0.4, 0.5 , 0.7],
+              'n_estimators': [500]}
+
+
+xgb_grid = GridSearchCV(xgb1,
+                        parameters,
+                        cv = 2,
+                        n_jobs = -1,
+                        verbose=True)
+
+with parallel_backend('threading'):
+    xgb_grid.fit(train_X,train_y , verbose=False)
+
+
+print(xgb_grid.best_score_)
+print(xgb_grid.best_params_)
 
 # Get the mean absolute error on the validation data :
-XGBpredictions = XGBModel.predict(val_X)
+XGBpredictions = xgb_grid.predict(val_X)
 MAE = mean_absolute_error(val_y , XGBpredictions)
 print('XGBoost validation MAE = ',MAE)
 
-XGBpredictions = XGBModel.predict(test)
-make_submission(XGBpredictions,'/lhome/nriahid/Documents/automl2019-kaggle/result/Submission(XGB).csv')
+
+
+def make_submission(prediction, sub_name):
+  my_submission = pd.DataFrame({'ID':pd.read_csv('/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.csv').index,'AveragePrice':prediction})
+  my_submission.to_csv('/lhome/nriahid/Documents/automl2019-kaggle/result/{}'.format(sub_name),index=False)
+  print('A submission file has been made')
+
+XGBpredictions = xgb_grid.predict(test)
+make_submission(XGBpredictions,'Submission(XGB).csv')
