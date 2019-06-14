@@ -17,8 +17,8 @@ df_test = pd.read_csv("/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.
 y_train = pd.read_csv("/lhome/nriahid/Documents/automl2019-kaggle/data/traindata_label.csv").values
 
 # Just take a subset of the available features
-x_train = df_train[["4046", "4225", "4770", "Total Bags", "Total Volume"]].values
-x_test = df_test[["4046", "4225", "4770", "Total Bags", "Total Volume"]].values
+x_train = df_train[["4046", "4225", "4770", "Total Bags", "Total Volume", "Date", "Small Bags", "Large Bags", "XLarge Bags", "type", "year", "region"]].values
+x_test = df_test[["4046", "4225", "4770", "Total Bags", "Total Volume", "Date", "Small Bags", "Large Bags", "XLarge Bags", "type", "year", "region"]].values
 
 model = DummyRegressor()
 model.fit(x_train, y_train)
