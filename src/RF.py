@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error 
 from matplotlib import pyplot as plt
+from sklearn.model_selection import GridSearchCV
 import seaborn as sb
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -17,6 +18,7 @@ warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 from xgboost import XGBRegressor
 import os
+from sklearn.externals.joblib import parallel_backend
 
 print(os.listdir("/lhome/nriahid/Documents/automl2019-kaggle/data"))
 
@@ -106,11 +108,33 @@ train, test = split_combined()
 
 train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.25, random_state = 14)
 
-model = RandomForestRegressor()
-model.fit(train_X,train_y)
+rf = RandomForestRegressor()
+
+parameters = {
+ 'bootstrap': [True, False],
+ 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+ 'max_features': ['auto', 'sqrt'],
+ 'min_samples_leaf': [1, 2, 4],
+ 'min_samples_split': [2, 5, 10],
+ 'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
+
+
+rf_grid = GridSearchCV( rf,
+                        parameters,
+                        cv = 2,
+                        n_jobs = -1,
+                        verbose=True)
+
+with parallel_backend('threading'):
+    rf_grid.fit(train_X,train_y)
+
+
+print(rf_grid.best_score_)
+print(rf_grid.best_params_)
+
 
 # Get the mean absolute error on the validation data
-predicted_prices = model.predict(val_X)
+predicted_prices = rf_grid.predict(val_X)
 MAE = mean_absolute_error(val_y , predicted_prices)
 print('Random forest validation MAE = ', MAE)
 
@@ -120,5 +144,5 @@ def make_submission(prediction, sub_name):
   my_submission.to_csv('/lhome/nriahid/Documents/automl2019-kaggle/result/{}'.format(sub_name),index=False)
   print('A submission file has been made')
 
-predicted_prices = model.predict(test)
+predicted_prices = rf_grid.predict(test)
 make_submission(predicted_prices,'Submission(RF).csv')
