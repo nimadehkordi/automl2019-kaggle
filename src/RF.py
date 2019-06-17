@@ -119,11 +119,11 @@ parameters = {
  'min_samples_split': [2, 5, 10],
  'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
 
-n_iter_search = 100
+n_iter_search = 20
 rf_grid = RandomizedSearchCV( rf,
                         parameters,
                         n_iter=n_iter_search,
-                        cv = 2,
+                        cv = 5,
                         n_jobs = -1,
                         verbose=True)
 
