@@ -7,8 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error 
 from matplotlib import pyplot as plt
-from sklearn.model_selection import GridSearchCV
-import seaborn as sb
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+#import seaborn as sb
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -108,6 +108,7 @@ train, test = split_combined()
 
 train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.25, random_state = 14)
 
+
 rf = RandomForestRegressor()
 
 parameters = {
@@ -118,9 +119,10 @@ parameters = {
  'min_samples_split': [2, 5, 10],
  'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
 
-
-rf_grid = GridSearchCV( rf,
+n_iter_search = 100
+rf_grid = RandomizedSearchCV( rf,
                         parameters,
+                        n_iter=n_iter_search,
                         cv = 2,
                         n_jobs = -1,
                         verbose=True)
