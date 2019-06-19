@@ -1,5 +1,4 @@
 #imports
-from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Dropout
 from tensorflow.keras import backend
@@ -106,7 +105,7 @@ def split_combined():
 
 train, test = split_combined()
 
-train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.25, random_state = 14)
+train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.05, random_state = 14)
 
 
 rf = RandomForestRegressor()
@@ -119,11 +118,11 @@ parameters = {
  'min_samples_split': [2, 5, 10],
  'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
 
-n_iter_search = 20
+n_iter_search = 5
 rf_grid = RandomizedSearchCV( rf,
                         parameters,
                         n_iter=n_iter_search,
-                        cv = 5,
+                        cv = 2,
                         n_jobs = -1,
                         verbose=True)
 
