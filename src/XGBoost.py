@@ -1,19 +1,11 @@
 #imports
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Activation, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Dropout
-from tensorflow.keras import backend
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error 
-from matplotlib import pyplot as plt
 from sklearn.model_selection import GridSearchCV
 import seaborn as sb
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import warnings 
-import tensorflow as tf
 warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 from xgboost import XGBRegressor
