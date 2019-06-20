@@ -1,3 +1,4 @@
 .vscode
 *.hdf5
 /env
+.DS_Store
