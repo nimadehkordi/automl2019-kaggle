@@ -12,6 +12,11 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 import os
 from sklearn.externals.joblib import parallel_backend
 
+import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
+from hpbandster.core.worker import Worker
+
+
 def get_data():
     #get train data
     train_data_path ='../data/traindata.csv'
@@ -98,15 +103,44 @@ train, test = split_combined()
 train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.05, random_state = 14)
 
 
-rf = RandomForestRegressor()
 
-parameters = {
- 'bootstrap': [True, False],
- 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
- 'max_features': ['auto', 'sqrt'],
- 'min_samples_leaf': [1, 2, 4],
- 'min_samples_split': [2, 5, 10],
- 'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
+def get_configspace():
+    """
+    It builds the configuration space with the needed hyperparameters.
+    It is easily possible to implement different types of hyperparameters.
+    Beside float-hyperparameters on a log scale, it is also able to handle categorical input parameter.
+    :return: ConfigurationsSpace-Object
+    """
+    cs = CS.ConfigurationSpace()
+
+    """
+    'bootstrap': [True, False],
+    'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+    'max_features': ['auto', 'sqrt'],
+    'min_samples_leaf': [1, 2, 4],
+    'min_samples_split': [2, 5, 10],
+    'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
+    """
+
+    bootstrap = CSH.CategoricalHyperparameter('bootstrap', [True, False])
+    max_depth = CSH.UniformIntegerHyperparameter('max_depth', lower=10, upper=100, default_value=None, log=False)
+    max_features = CSH.CategoricalHyperparameter('max_features', ['auto', 'sqrt'])
+    min_samples_leaf = CSH.UniformIntegerHyperparameter('min_samples_leaf', lower=1, upper=4, log=False)
+    min_samples_split = CSH.UniformIntegerHyperparameter('min_samples_split', lower=2, upper=10, log=False)
+    n_estimators = CSH.UniformIntegerHyperparameter('min_samples_split', lower=100, upper=2000, log=True)
+
+    cs.add_hyperparameters([bootstrap, max_depth, max_features, min_samples_leaf, min_samples_split, n_estimators])
+    
+    return cs
+
+
+rf = RandomForestRegressor()
+worker = Worker(run_id='0')
+cs = get_configspace()
+
+config = cs.sample_configuration().get_dictionary()
+print(config)
+res = worker.compute(config=config, budget=1, working_directory='.')
 
 n_iter_search = 500
 rf_grid = RandomizedSearchCV( rf,
