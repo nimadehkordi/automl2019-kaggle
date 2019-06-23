@@ -15,21 +15,18 @@ import warnings
 import tensorflow as tf
 warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
-from xgboost import XGBRegressor
 import os
-
-print(os.listdir("/lhome/nriahid/Documents/automl2019-kaggle/data"))
 
 
 def get_data():
     #get train data
-    train_data_path ='/lhome/nriahid/Documents/automl2019-kaggle/data/traindata.csv'
-    train_label_path = '/lhome/nriahid/Documents/automl2019-kaggle/data/traindata_label.csv'
+    train_data_path ='../data/traindata.csv'
+    train_label_path = '../data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
     
     #get test data
-    test_data_path ='/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.csv'
+    test_data_path ='../data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
     
     return train_x , train_y, test_x
@@ -107,26 +104,13 @@ train, test = split_combined()
 NN_model = Sequential()
 
 # The Input Layer :
-NN_model.add(Dense(128, kernel_initializer='normal',input_dim = train.shape[1], activation='relu'))
+NN_model.add(Dense(12, kernel_initializer='normal',input_dim = train.shape[1], activation='relu'))
 
 # The Hidden Layers :
-NN_model.add(Dense(256, kernel_initializer='normal',activation='relu'))
-#NN_model.add(Dense(256, kernel_initializer='normal',activation='relu'))
-NN_model.add(Dense(256, kernel_initializer='normal',activation='relu'))
-
-
-#NN_model.add(Conv2D(64, kernel_initializer='normal', kernel_size=(3, 3), activation='relu', padding='same'))
-#NN_model.add(Conv2D(64, kernel_initializer='normal', kernel_size=(3, 3), activation='relu', padding='same'))
-#NN_model.add(MaxPooling2D(pool_size=(2, 2)))
-#NN_model.add(BatchNormalization())
-#NN_model.add(Flatten())
-#NN_model.add(Dense(512, kernel_initializer='normal', activation='relu'))
-#NN_model.add(Dropout(0.5))
-
+NN_model.add(Dense(8, kernel_initializer='normal',activation='relu'))
 
 # The Output Layer :
 NN_model.add(Dense(1, kernel_initializer='normal',activation='linear'))
-
 
 # Compile the network :
 NN_model.compile(loss=tf.keras.metrics.mean_squared_error, optimizer='rmsprop', metrics=[tf.keras.metrics.RootMeanSquaredError(name='rmse')])
@@ -145,8 +129,8 @@ NN_model.load_weights(wights_file) # load it
 NN_model.compile(loss=tf.keras.metrics.mean_squared_error, optimizer='adam', metrics=[tf.keras.metrics.RootMeanSquaredError(name='rmse')])
 
 def make_submission(prediction, sub_name):
-  my_submission = pd.DataFrame({'ID':pd.read_csv('/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.csv').index,'AveragePrice':prediction})
-  my_submission.to_csv('/lhome/nriahid/Documents/automl2019-kaggle/result/{}'.format(sub_name),index=False)
+  my_submission = pd.DataFrame({'ID':pd.read_csv('../data/testdata.csv').index,'AveragePrice':prediction})
+  my_submission.to_csv('../result/{}'.format(sub_name),index=False)
   print('A submission file has been made')
 
 predictions = NN_model.predict(test)

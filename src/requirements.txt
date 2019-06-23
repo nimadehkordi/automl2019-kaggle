@@ -2,4 +2,7 @@ numpy
 matplotlib
 sklearn
 pandas
+tensorflow
+seaborn
+xgboost
 # add your requirements below this line
