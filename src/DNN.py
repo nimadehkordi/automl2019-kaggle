@@ -184,7 +184,7 @@ class KerasWorker(Worker):
             optimizer = keras.optimizers.SGD(
                 lr=config['lr'], momentum=config['sgd_momentum'])
 
-        model.compile(loss=keras.losses.categorical_crossentropy,
+        model.compile(loss=keras.losses.mean_squared_error,
                       optimizer=optimizer,
                       metrics=['accuracy'])
 
@@ -203,9 +203,9 @@ class KerasWorker(Worker):
         return ({
                 'loss': 1-val_score[1],  # remember: HpBandSter always minimizes!
                 'info': {	'test accuracy': test_score[1],
-                                        'train accuracy': train_score[1],
-                                        'validation accuracy': val_score[1],
-                                        'number of parameters': model.count_params(),
+                            'train accuracy': train_score[1],
+                            'validation accuracy': val_score[1],
+                            'number of parameters': model.count_params(),
                           }
 
                 })
