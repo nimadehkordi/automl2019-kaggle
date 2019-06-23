@@ -4,10 +4,6 @@ from hpbandster.core.worker import Worker
 import ConfigSpace.hyperparameters as CSH
 import ConfigSpace as CS
 import os
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Activation, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Dropout
-from tensorflow.keras import backend
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
@@ -17,13 +13,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import warnings
-import tensorflow as tf
 warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 try:
     import keras
-    from keras.datasets import mnist
     from keras.models import Sequential
     from keras.layers import Dense, Dropout, Flatten
     from keras.layers import Conv2D, MaxPooling2D
@@ -69,11 +63,11 @@ def get_combined_data():
     return combined, train_y
 
 
-# Load train and test data into pandas DataFrames
-train_x, train_y, test_x = get_data()
+#Load train and test data into pandas DataFrames
+train_x, target ,test_x = get_data()
 
-# Combine train and test data to process them together
-combined, train_y = get_combined_data()
+#Combine train and test data to process them together
+combined, target = get_combined_data()
 
 
 def get_cols_with_no_nans(df, col_type):
@@ -174,15 +168,15 @@ class KerasWorker(Worker):
         model = Sequential()
 
         # The Input Layer :
-        NN_model.add(Dense(config['num_filters_1'], kernel_initializer='normal',
+        model.add(Dense(config['num_filters_1'], kernel_initializer='normal',
                     input_dim=self.input_shape, activation='relu'))
 
         # The Hidden Layers :
-        NN_model.add(Dense(config['num_filters_2'],
+        model.add(Dense(config['num_filters_2'],
                     kernel_initializer='normal', activation='relu'))
 
         # The Output Layer :
-        NN_model.add(Dense(1, kernel_initializer='normal', activation='linear'))
+        model.add(Dense(1, kernel_initializer='normal', activation='linear'))
 
         if config['optimizer'] == 'Adam':
             optimizer = keras.optimizers.Adam(lr=config['lr'])
