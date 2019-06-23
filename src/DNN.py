@@ -132,7 +132,7 @@ class KerasWorker(Worker):
         # the data, split between train and test sets
         #(x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train, x_test, y_train, y_test = train_test_split(
-        train, target, test_size=0.05, random_state=14)
+        train, target, test_size=0.25, random_state=14)
 
         x_train = x_train.astype('float32')
         x_test = x_test.astype('float32')
