@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     config = cs.sample_configuration().get_dictionary()
     print(config)
-    res = worker.compute(config=config, budget=10, working_directory='.')
+    res = worker.compute(config=config, budget=1000, working_directory='.')
     print(res)
 
 
