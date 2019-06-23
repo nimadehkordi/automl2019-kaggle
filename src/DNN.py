@@ -162,7 +162,7 @@ class KerasWorker(Worker):
         self.x_train, self.y_train = x_train, y_train
         self.x_validation, self.y_validation = x_test, y_test
         self.x_test, self.y_test = x_test, y_test
-    self.input_shape = x_train.shape[1]
+        self.input_shape = x_train.shape[1]
 
     def compute(self, config, budget, working_directory, *args, **kwargs):
         """
