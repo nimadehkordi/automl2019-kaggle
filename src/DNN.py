@@ -9,11 +9,11 @@ warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 try:
-    import keras
-    from keras.models import Sequential
-    from keras.layers import Dense, Dropout, Flatten
-    from keras.layers import Conv2D, MaxPooling2D
-    from keras import backend as K
+    import tensorflow as tf
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense, Dropout, Flatten
+    from tensorflow.keras.layers import Conv2D, MaxPooling2D
+    from tensorflow.keras import backend
 except:
     raise ImportError("For this example you need to install keras.")
 
@@ -225,15 +225,12 @@ class KerasWorker(Worker):
 
         cs.add_hyperparameters([lr, optimizer, sgd_momentum])
 
-
-        num_conv_layers = CSH.UniformIntegerHyperparameter('num_conv_layers', lower=1, upper=3, default_value=2)
-
         num_filters_1 = CSH.UniformIntegerHyperparameter(
             'num_filters_1', lower=4, upper=64, default_value=16, log=True)
         num_filters_2 = CSH.UniformIntegerHyperparameter(
             'num_filters_2', lower=4, upper=64, default_value=16, log=True)
 
-        cs.add_hyperparameters([num_conv_layers, num_filters_1, num_filters_2])
+        cs.add_hyperparameters([num_filters_1, num_filters_2])
 
         # The hyperparameter sgd_momentum will be used,if the configuration
         # contains 'SGD' as optimizer.
