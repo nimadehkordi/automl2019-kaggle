@@ -171,12 +171,12 @@ class KerasWorker(Worker):
         model.add(Dense(1, kernel_initializer='normal', activation='linear'))
 
         if config['optimizer'] == 'Adam':
-            optimizer = keras.optimizers.Adam(lr=config['lr'])
+            optimizer = tf.keras.optimizers.Adam(lr=config['lr'])
         else:
-            optimizer = keras.optimizers.SGD(
+            optimizer = tf.keras.optimizers.SGD(
                 lr=config['lr'], momentum=config['sgd_momentum'])
 
-        model.compile(loss=keras.losses.mean_squared_error,
+        model.compile(loss=tf.keras.losses.mean_squared_error,
                       optimizer=optimizer,
                       metrics=['accuracy'])
 
