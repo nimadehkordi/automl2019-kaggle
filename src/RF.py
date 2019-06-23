@@ -100,13 +100,26 @@ train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.0
 
 rf = RandomForestRegressor()
 
-parameters = {
- 'bootstrap': [True, False],
- 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
- 'max_features': ['auto', 'sqrt'],
- 'min_samples_leaf': [1, 2, 4],
- 'min_samples_split': [2, 5, 10],
- 'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
+# Number of trees in random forest
+n_estimators = [int(x) for x in np.linspace(start = 100, stop = 1200, num = 12)]
+# Number of features to consider at every split
+max_features = ['auto', 'sqrt']
+# Maximum number of levels in tree
+max_depth = [int(x) for x in np.linspace(5, 30, num = 6)]
+# max_depth.append(None)
+# Minimum number of samples required to split a node
+min_samples_split = [2, 5, 10, 15, 100]
+# Minimum number of samples required at each leaf node
+min_samples_leaf = [1, 2, 5, 10]
+# Method of selecting samples for training each tree
+# bootstrap = [True, False]
+
+# Create the random grid
+parameters = {'n_estimators': n_estimators,
+               'max_features': max_features,
+               'max_depth': max_depth,
+               'min_samples_split': min_samples_split,
+               'min_samples_leaf': min_samples_leaf}
 
 n_iter_search = 500
 rf_grid = RandomizedSearchCV( rf,
