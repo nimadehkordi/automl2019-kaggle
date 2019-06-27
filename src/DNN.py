@@ -28,18 +28,28 @@ import ConfigSpace.hyperparameters as CSH
 
 from hpbandster.core.worker import Worker
 
+import pickle
+
+
+import hpbandster.core.nameserver as hpns
+import hpbandster.core.result as hpres
+from hpbandster.optimizers import BOHB
+
+logging.getLogger('hpbandster').setLevel(logging.DEBUG)
+
 logging.basicConfig(level=logging.DEBUG)
+
 
 
 def get_data():
     # get train data
-    train_data_path = '../data/traindata.csv'
-    train_label_path = '../data/traindata_label.csv'
+    train_data_path = '/lhome/nriahid/Documents/automl2019-kaggle/data/traindata.csv'
+    train_label_path = '/lhome/nriahid/Documents/automl2019-kaggle/data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
 
     # get test data
-    test_data_path = '../data/testdata.csv'
+    test_data_path = '/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
 
     return train_x, train_y, test_x
@@ -134,10 +144,10 @@ class KerasWorker(Worker):
         x_train, x_test, y_train, y_test = train_test_split(
         train, target, test_size=0.25, random_state=14)
 
-        x_train = x_train.astype('float32')
-        x_test = x_test.astype('float32')
+        #x_train = x_train.astype('float32')
+        #x_test = x_test.astype('float32')
 
-    # zero-one normalization
+        # zero-one normalization
         #x_train /= 255
         #x_test /= 255
 
@@ -197,8 +207,8 @@ class KerasWorker(Worker):
                 'info': {	'test accuracy': test_score[1],
                             'train accuracy': train_score[1],
                             'validation accuracy': val_score[1],
-                            'number of parameters': model.count_params(),
-                          }
+                            'number of parameters': model.count_params()
+                        }
 
                 })
 
@@ -241,13 +251,55 @@ class KerasWorker(Worker):
 
 
 if __name__ == "__main__":
+    working_dir = os.curdir
+    # minimum budget that BOHB uses
+    min_budget = 1
+    # largest budget BOHB will use
+    max_budget = 2
     worker = KerasWorker(run_id='0')
-    cs = worker.get_configspace()
 
-    config = cs.sample_configuration().get_dictionary()
-    print(config)
-    res = worker.compute(config=config, budget=1000, working_directory='.')
-    print(res)
+    result_file = os.path.join(working_dir, 'bohb_result.pkl')
+    nic_name = 'lo'
+    port = 0
+    run_id = 'bohb_run_1'
+    n_bohb_iterations = 1
+    
+    
+    try:
+        # Start a nameserver
+        host = hpns.nic_name_to_host(nic_name)
+        ns = hpns.NameServer(run_id=run_id, host=host, port=port,
+                            working_directory=working_dir)
+        ns_host, ns_port = ns.start()
+
+        # Start local worker
+        w = KerasWorker(run_id=run_id, host=host, nameserver=ns_host,
+                        nameserver_port=ns_port, timeout=120)
+        w.run(background=True)
+
+        # Run an optimizer
+        bohb = BOHB(configspace=worker.get_configspace(),
+                    run_id=run_id,
+                    host=host,
+                    nameserver=ns_host,
+                    nameserver_port=ns_port,
+                    min_budget=min_budget, max_budget=max_budget)
+        
+        result = bohb.run(n_iterations=n_bohb_iterations)
+        print("Write result to file {}".format(result_file))
+        with open(result_file, 'wb') as f:
+            pickle.dump(result, f)
+    finally:
+        bohb.shutdown(shutdown_workers=True)
+        ns.shutdown()
+
+    # worker = KerasWorker(run_id='0')
+    # cs = worker.get_configspace()
+
+    # config = cs.sample_configuration().get_dictionary()
+    # print(config)
+    # res = worker.compute(config=config, budget=1000, working_directory='.')
+    # print(res)
 
 
 # NN_model = Sequential()
