@@ -121,10 +121,8 @@ parameters = {'n_estimators': n_estimators,
                'min_samples_split': min_samples_split,
                'min_samples_leaf': min_samples_leaf}
 
-n_iter_search = 500
-rf_grid = RandomizedSearchCV( rf,
+rf_grid = GridSearchCV( rf,
                         parameters,
-                        n_iter=n_iter_search,
                         cv = 2,
                         n_jobs = -1,
                         verbose=True)
