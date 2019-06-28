@@ -120,7 +120,7 @@ bootstrap = [True, False]
 # Create the random grid
 parameters = {'n_estimators': n_estimators,
                'max_features': max_features,
-               'max_depth': max_depth
+               'max_depth': max_depth,
                'min_samples_split': min_samples_split,
                'min_samples_leaf': min_samples_leaf,
                'bootstrap': bootstrap}
