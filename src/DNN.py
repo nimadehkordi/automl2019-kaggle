@@ -71,6 +71,8 @@ train_x, target ,test_x = get_data()
 #Combine train and test data to process them together
 combined, target = get_combined_data()
 
+combined['Date'] = pd.to_datetime(combined['Date'], format='%Y-%m-%d')
+combined['Date'] = combined['Date'].dt.week
 
 def get_cols_with_no_nans(df, col_type):
     '''
@@ -155,9 +157,9 @@ class KerasWorker(Worker):
         #y_train = keras.utils.to_categorical(y_train, self.num_classes)
         #y_test = keras.utils.to_categorical(y_test, self.num_classes)
 
-        self.x_train, self.y_train = x_train, y_train
-        self.x_validation, self.y_validation = x_test, y_test
-        self.x_test, self.y_test = x_test, y_test
+        self.x_train, self.y_train = x_train.to_numpy(), y_train.to_numpy()
+        self.x_validation, self.y_validation = x_test.to_numpy(), y_test.to_numpy()
+        self.x_test, self.y_test = x_test.to_numpy(), y_test.to_numpy()
         self.input_shape = x_train.shape[1]
 
     def compute(self, config, budget, working_directory, *args, **kwargs):

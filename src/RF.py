@@ -40,6 +40,9 @@ train_x, target ,test_x = get_data()
 #Combine train and test data to process them together
 combined, target = get_combined_data()
 
+combined['Date'] = pd.to_datetime(combined['Date'], format='%Y-%m-%d')
+combined['Date'] = combined['Date'].dt.week
+
 def get_cols_with_no_nans(df,col_type):
     '''
     Arguments :
