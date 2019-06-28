@@ -13,18 +13,18 @@ import os
 from sklearn.externals.joblib import parallel_backend
 
 
-print(os.listdir("../data"))
+print(os.listdir("data"))
 
 
 def get_data():
     #get train data
-    train_data_path ='../data/traindata.csv'
-    train_label_path = '../data/traindata_label.csv'
+    train_data_path ='data/traindata.csv'
+    train_label_path = 'data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
     
     #get test data
-    test_data_path ='../data/testdata.csv'
+    test_data_path ='data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
     
     return train_x , train_y, test_x
@@ -43,8 +43,12 @@ train_x, target ,test_x = get_data()
 
 #Combine train and test data to process them together
 combined, target = get_combined_data()
-
+#df['Date'].dt.week
+combined['Date'] = pd.to_datetime(combined['Date'], format='%Y-%m-%d')
+combined['Date'] = combined['Date'].dt.week
+#pd.to_datetime(combined['Date'], format="%Y-%m-%d")#infer_datetime_format=True)
 def get_cols_with_no_nans(df,col_type):
+    pd.DatetimeIndex
     '''
     Arguments :
     df : The dataframe to process
@@ -136,8 +140,8 @@ print('XGBoost validation MAE = ',MAE)
 
 
 def make_submission(prediction, sub_name):
-  my_submission = pd.DataFrame({'ID':pd.read_csv('../data/testdata.csv').index,'AveragePrice':prediction})
-  my_submission.to_csv('../result/{}'.format(sub_name),index=False)
+  my_submission = pd.DataFrame({'ID':pd.read_csv('data/testdata.csv').index,'AveragePrice':prediction})
+  my_submission.to_csv('result/{}'.format(sub_name),index=False)
   print('A submission file has been made')
 
 XGBpredictions = xgb_grid.predict(test)
