@@ -18,13 +18,13 @@ print(os.listdir("data"))
 
 def get_data():
     #get train data
-    train_data_path ='data/traindata.csv'
-    train_label_path = 'data/traindata_label.csv'
+    train_data_path ='../data/traindata.csv'
+    train_label_path = '../data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
     
     #get test data
-    test_data_path ='data/testdata.csv'
+    test_data_path ='../data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
     
     return train_x , train_y, test_x
@@ -103,7 +103,7 @@ def split_combined():
 
 train, test = split_combined()
 
-train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.25, random_state = 14)
+train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.1, random_state = 14)
 
 xgb1 = XGBRegressor()
 
@@ -140,8 +140,8 @@ print('XGBoost validation MAE = ',MAE)
 
 
 def make_submission(prediction, sub_name):
-  my_submission = pd.DataFrame({'ID':pd.read_csv('data/testdata.csv').index,'AveragePrice':prediction})
-  my_submission.to_csv('result/{}'.format(sub_name),index=False)
+  my_submission = pd.DataFrame({'ID':pd.read_csv('../data/testdata.csv').index,'AveragePrice':prediction})
+  my_submission.to_csv('../result/{}'.format(sub_name),index=False)
   print('A submission file has been made')
 
 XGBpredictions = xgb_grid.predict(test)
