@@ -13,9 +13,6 @@ import os
 from sklearn.externals.joblib import parallel_backend
 
 
-print(os.listdir("data"))
-
-
 def get_data():
     #get train data
     train_data_path ='../data/traindata.csv'
@@ -119,8 +116,9 @@ parameters = {'nthread':[4], #when use hyperthread, xgboost may become slower
               'n_estimators': [500]}
 
 
-xgb_grid = GridSearchCV(xgb1,
+xgb_grid = RandomizedSearchCV(xgb1,
                         parameters,
+                        n_iter = 1000,
                         cv = 2,
                         n_jobs = -1,
                         verbose=True)
