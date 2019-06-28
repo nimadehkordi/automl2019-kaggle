@@ -43,13 +43,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 def get_data():
     # get train data
-    train_data_path = '/lhome/nriahid/Documents/automl2019-kaggle/data/traindata.csv'
-    train_label_path = '/lhome/nriahid/Documents/automl2019-kaggle/data/traindata_label.csv'
+    train_data_path = '../data/traindata.csv'
+    train_label_path = '../data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
 
     # get test data
-    test_data_path = '/lhome/nriahid/Documents/automl2019-kaggle/data/testdata.csv'
+    test_data_path = '../data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
 
     return train_x, train_y, test_x
