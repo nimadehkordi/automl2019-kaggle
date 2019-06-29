@@ -39,7 +39,7 @@ train_x, target ,test_x = get_data()
 
 #Combine train and test data to process them together
 combined, target = get_combined_data()
-
+#print(combined.describe())
 combined['Date'] = pd.to_datetime(combined['Date'], format='%Y-%m-%d')
 combined['Date'] = combined['Date'].dt.week
 
@@ -103,36 +103,22 @@ train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.0
 
 rf = RandomForestRegressor()
 
-# Number of trees in random forest
-n_estimators = [int(x) for x in np.linspace(start = 100, stop = 2000, num = 8)]
-# Number of features to consider at every split
-max_features = ['auto', 'sqrt']
-# Maximum number of levels in tree
-max_depth = [int(x) for x in np.linspace(30, 60, num = 6)]
-# max_depth.append(None)
-# Minimum number of samples required to split a node
-min_samples_split = [2, 5, 10, 15, 100]
-# Minimum number of samples required at each leaf node
-min_samples_leaf = [1, 2, 5, 10]
-# Method of selecting samples for training each tree
-bootstrap = [True, False]
+parameters = {'bootstrap': [True, False],
+ 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+ 'max_features': ['auto', 'sqrt'],
+ 'min_samples_leaf': [1, 2, 4],
+ 'min_samples_split': [2, 5, 10],
+ 'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
 
-# Create the random grid
-parameters = {'n_estimators': n_estimators,
-               'max_features': max_features,
-               'max_depth': max_depth,
-               'min_samples_split': min_samples_split,
-               'min_samples_leaf': min_samples_leaf,
-               'bootstrap': bootstrap}
-
-rf_grid = GridSearchCV( rf,
+rf_grid = RandomizedSearchCV( rf,
                         parameters,
-                        cv = 2,
+                        n_iter = 100,
+                        cv = 5,
                         n_jobs = -1,
                         verbose=True)
 
 with parallel_backend('threading'):
-    rf_grid.fit(train_X.to_numpy,train_y.to_numpy)
+    rf_grid.fit(train_X,train_y)
 
 
 print(rf_grid.best_score_)
@@ -141,7 +127,7 @@ print(rf_grid.best_params_)
 
 # Get the mean absolute error on the validation data
 predicted_prices = rf_grid.predict(val_X)
-MAE = mean_absolute_error(val_y. , predicted_prices)
+MAE = mean_absolute_error(val_y , predicted_prices)
 print('Random forest validation MAE = ', MAE)
 
 
@@ -150,5 +136,5 @@ def make_submission(prediction, sub_name):
   my_submission.to_csv('../result/{}'.format(sub_name),index=False)
   print('A submission file has been made')
 
-predicted_prices = rf_grid.predict(test)
+predicted_prices = rf_grid.predict(test.to_numpy())
 make_submission(predicted_prices,'Submission(RF).csv')
