@@ -24,8 +24,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 parser = argparse.ArgumentParser(description='Example 5 - CNN on MNIST')
-parser.add_argument('--min_budget',   type=float, help='Minimum number of epochs for training.',    default=1)
-parser.add_argument('--max_budget',   type=float, help='Maximum number of epochs for training.',    default=9)
+parser.add_argument('--min_budget',   type=float, help='Minimum number of epochs for training.',    default=10)
+parser.add_argument('--max_budget',   type=float, help='Maximum number of epochs for training.',    default=100)
 parser.add_argument('--n_iterations', type=int,   help='Number of iterations performed by the optimizer', default=16)
 parser.add_argument('--worker', help='Flag to turn this into a worker process', action='store_true')
 parser.add_argument('--run_id', type=str, help='A unique run id for this optimization run. An easy option is to use the job id of the clusters scheduler.')
@@ -56,7 +56,7 @@ if args.worker:
 # interesting. The core.result submodule contains the functionality to
 # read the two generated files (results.json and configs.json) and
 # create a Result object.
-result_logger = hpres.json_result_logger(directory=args.shared_directory, overwrite=False)
+result_logger = hpres.json_result_logger(directory=args.shared_directory, overwrite=True)
 
 
 # Start a nameserver:
