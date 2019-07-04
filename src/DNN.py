@@ -178,7 +178,7 @@ class KerasWorker(Worker):
                 lr=config['lr'], momentum=config['sgd_momentum'])
         
         model.compile(loss=root_mean_squared_error,
-                      optimizer=optimizer, metrics=['accuracy'])
+                      optimizer=optimizer, metrics=[root_mean_squared_error])
 
         model.fit(self.x_train, self.y_train,
                   batch_size=config['batch_size'],
