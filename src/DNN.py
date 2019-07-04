@@ -1,4 +1,12 @@
 # imports
+from hpbandster.optimizers import BOHB
+import hpbandster.core.result as hpres
+import hpbandster.core.nameserver as hpns
+import array
+import pickle
+from hpbandster.core.worker import Worker
+import ConfigSpace.hyperparameters as CSH
+import ConfigSpace as CS
 import logging
 import os
 from sklearn.model_selection import train_test_split
@@ -17,24 +25,6 @@ try:
 
 except:
     raise ImportError("For this example you need to install keras.")
-
-try:
-    import torchvision
-    import torchvision.transforms as transforms
-except:
-    raise ImportError("For this example you need to install pytorch-vision.")
-
-import ConfigSpace as CS
-import ConfigSpace.hyperparameters as CSH
-
-from hpbandster.core.worker import Worker
-
-import pickle
-import array
-
-import hpbandster.core.nameserver as hpns
-import hpbandster.core.result as hpres
-from hpbandster.optimizers import BOHB
 
 logging.getLogger('hpbandster').setLevel(logging.DEBUG)
 
@@ -65,14 +55,15 @@ def get_combined_data():
     return combined, train_y
 
 
-#Load train and test data into pandas DataFrames
-train_x, target ,test_x = get_data()
+# Load train and test data into pandas DataFrames
+train_x, target, test_x = get_data()
 
-#Combine train and test data to process them together
+# Combine train and test data to process them together
 combined, target = get_combined_data()
 
 combined['Date'] = pd.to_datetime(combined['Date'], format='%Y-%m-%d')
 combined['Date'] = combined['Date'].dt.week
+
 
 def get_cols_with_no_nans(df, col_type):
     '''
@@ -123,8 +114,10 @@ combined = oneHotEncode(combined, cat_cols)
 print('There are {} columns after encoding categorical features'.format(
     combined.shape[1]))
 
+
 def root_mean_squared_error(y_true, y_pred):
-        return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1)) 
+        return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
+
 
 def split_combined():
     global combined
@@ -145,12 +138,12 @@ class KerasWorker(Worker):
 
         # the data, split between train and test sets
         x_train, x_test, y_train, y_test = train_test_split(
-        train, target, test_size=0.25, random_state=14)
-
+        train, target, test_size=0.01, random_state=14)
 
         self.x_train, self.y_train = x_train.to_numpy().astype('float32'), y_train.to_numpy().astype('float32')
-        #self.x_validation, self.y_validation = x_test.to_numpy().astype('float32'), y_test.to_numpy().astype('float32')
-        self.x_test, self.y_test = x_test.to_numpy().astype('float32'), y_test.to_numpy().astype('float32')
+        # self.x_validation, self.y_validation = x_test.to_numpy().astype('float32'), y_test.to_numpy().astype('float32')
+        self.x_test, self.y_test = x_test.to_numpy().astype(
+            'float32'), y_test.to_numpy().astype('float32')
         self.input_shape = x_train.to_numpy().shape[1]
 
     def compute(self, config, budget, working_directory, *args, **kwargs):
@@ -163,15 +156,20 @@ class KerasWorker(Worker):
         model = Sequential()
 
         # The Input Layer :
-        model.add(Dense(config['num_filters_1'], kernel_initializer='normal',
+        model.add(Dense(config['num_filters_1'], kernel_initializer='uniform',
                     input_dim=self.input_shape, activation='relu'))
 
-        # The Hidden Layers :
-        model.add(Dense(config['num_filters_2'],
-                    kernel_initializer='normal', activation='relu'))
-
+        # # The Hidden Layers :
+        #if config['num_conv_layers'] > 1:
+        model.add(Dense(config['num_filters_2'], kernel_initializer='uniform', activation='relu'))
+        model.add(Dropout(config['dropout_rate']))
+            
+        #if config['num_conv_layers'] > 2:
+        model.add(Dense(config['num_filters_3'], kernel_initializer='uniform', activation='relu'))
+        model.add(Dropout(config['dropout_rate']))
+        
         # The Output Layer :
-        model.add(Dense(1, kernel_initializer='normal', activation='linear'))
+        model.add(Dense(1, kernel_initializer='uniform', activation='linear'))
 
         if config['optimizer'] == 'Adam':
             optimizer = keras.optimizers.Adam(lr=config['lr'])
@@ -180,16 +178,15 @@ class KerasWorker(Worker):
                 lr=config['lr'], momentum=config['sgd_momentum'])
         
         model.compile(loss=root_mean_squared_error,
-                      optimizer=optimizer, metrics=['mse'])
+                      optimizer=optimizer, metrics=['accuracy'])
 
         model.fit(self.x_train, self.y_train,
-                  batch_size=self.batch_size,
+                  batch_size=config['batch_size'],
                   epochs=int(budget),
-                  verbose=0,
-                  validation_data=(self.x_test, self.y_test))
+                  verbose=1, validation_data=(self.x_test, self.y_test))
 
         train_score = model.evaluate(self.x_train, self.y_train, verbose=0)
-        #val_score = model.evaluate(
+        # val_score = model.evaluate(
         #    self.x_validation, self.y_validation, verbose=0)
         test_score = model.evaluate(self.x_test, self.y_test, verbose=0)
 
@@ -197,7 +194,7 @@ class KerasWorker(Worker):
                 'loss': 1-test_score[1],  # remember: HpBandSter always minimizes!
                 'info': {	'test accuracy': test_score[1],
                             'train accuracy': train_score[1],
-                            #'validation accuracy': val_score[1],
+                            # 'validation accuracy': val_score[1],
                             'number of parameters': model.count_params()
                         }
 
@@ -214,7 +211,7 @@ class KerasWorker(Worker):
         cs = CS.ConfigurationSpace()
 
         lr = CSH.UniformFloatHyperparameter(
-            'lr', lower=1e-6, upper=1e-1, default_value='1e-2', log=True)
+            'lr', lower=1e-4, upper=1e-1, default_value='1e-2', log=True)
 
         # For demonstration purposes, we add different optimizers as categorical hyperparameters.
         # To show how to use conditional hyperparameters with ConfigSpace, we'll add the optimizers 'Adam' and 'SGD'.
@@ -223,31 +220,36 @@ class KerasWorker(Worker):
 
         sgd_momentum = CSH.UniformFloatHyperparameter(
             'sgd_momentum', lower=0.0, upper=0.99, default_value=0.9, log=False)
+        
+        batch_size = CSH.UniformIntegerHyperparameter('batch_size', lower=8, upper=64, default_value=32, log=True)
+        num_conv_layers =  CSH.UniformIntegerHyperparameter('num_conv_layers', lower=1, upper=3, default_value=2, log=False)
 
-        cs.add_hyperparameters([lr, optimizer, sgd_momentum])
+        cs.add_hyperparameters([lr, optimizer, sgd_momentum, batch_size, num_conv_layers])
 
-        num_filters_1 = CSH.UniformIntegerHyperparameter(
-            'num_filters_1', lower=16, upper=256, default_value=16, log=True)
-        num_filters_2 = CSH.UniformIntegerHyperparameter(
-            'num_filters_2', lower=16, upper=256, default_value=16, log=True)
+        
 
-        cs.add_hyperparameters([num_filters_1, num_filters_2])
+        num_filters_1 = CSH.UniformIntegerHyperparameter('num_filters_1', lower=4, upper=32, default_value=16, log=True)
+        num_filters_2 = CSH.UniformIntegerHyperparameter('num_filters_2', lower=4, upper=32, default_value=16, log=True)
+        num_filters_3 = CSH.UniformIntegerHyperparameter('num_filters_3', lower=4, upper=32, default_value=16, log=True)
+        
+        cs.add_hyperparameters([num_filters_1, num_filters_2, num_filters_3])
 
+        dropout_rate = CSH.UniformFloatHyperparameter('dropout_rate', lower=0.0, upper=0.5, default_value=0.3, log=False)
+        cs.add_hyperparameter(dropout_rate)
         # The hyperparameter sgd_momentum will be used,if the configuration
         # contains 'SGD' as optimizer.
         cond = CS.EqualsCondition(sgd_momentum, optimizer, 'SGD')
         cs.add_condition(cond)
 
+        # You can also use inequality conditions:
+        #cond = CS.GreaterThanCondition(num_filters_2, num_conv_layers, 1)
+        #cs.add_condition(cond)
+
+        #cond = CS.GreaterThanCondition(num_filters_3, num_conv_layers, 2)
+        #cs.add_condition(cond)
+
         return cs
 
-
-    # worker = KerasWorker(run_id='0')
-    # cs = worker.get_configspace()
-
-    # config = cs.sample_configuration().get_dictionary()
-    # print(config)
-    # res = worker.compute(config=config, budget=1000, working_directory='.')
-    # print(res)
 
 
 # NN_model = Sequential()

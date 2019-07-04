@@ -24,13 +24,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 parser = argparse.ArgumentParser(description='Example 5 - CNN on MNIST')
-parser.add_argument('--min_budget',   type=float, help='Minimum number of epochs for training.',    default=10)
+parser.add_argument('--min_budget',   type=float, help='Minimum number of epochs for training.',    default=2)
 parser.add_argument('--max_budget',   type=float, help='Maximum number of epochs for training.',    default=100)
 parser.add_argument('--n_iterations', type=int,   help='Number of iterations performed by the optimizer', default=16)
 parser.add_argument('--worker', help='Flag to turn this into a worker process', action='store_true')
 parser.add_argument('--run_id', type=str, help='A unique run id for this optimization run. An easy option is to use the job id of the clusters scheduler.')
 parser.add_argument('--nic_name',type=str, help='Which network interface to use for communication.', default='lo')
-parser.add_argument('--shared_directory',type=str, help='A directory that is accessible for all processes, e.g. a NFS share.', default='.')
+parser.add_argument('--shared_directory',type=str, help='A directory that is accessible for all processes, e.g. a NFS share.', default='./result')
 parser.add_argument('--backend',help='Toggles which worker is used. Choose between a pytorch and a keras implementation.', choices=['pytorch', 'keras'], default='keras')
 
 args=parser.parse_args()
