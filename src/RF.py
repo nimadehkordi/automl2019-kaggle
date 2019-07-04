@@ -12,17 +12,17 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 import os
 from sklearn.externals.joblib import parallel_backend
 
-print(os.listdir('data'))
+print(os.listdir('../data'))
 
 def get_data():
     #get train data
-    train_data_path ='data/traindata.csv'
-    train_label_path = 'data/traindata_label.csv'
+    train_data_path ='../data/traindata.csv'
+    train_label_path = '../data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
     
     #get test data
-    test_data_path ='data/testdata.csv'
+    test_data_path ='../data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
     
     return train_x , train_y, test_x
@@ -134,8 +134,8 @@ print('Random forest validation MAE = ', MAE)
 
 
 def make_submission(prediction, sub_name):
-  my_submission = pd.DataFrame({'ID':pd.read_csv('data/testdata.csv').index,'AveragePrice':prediction})
-  my_submission.to_csv('result/{}'.format(sub_name),index=False)
+  my_submission = pd.DataFrame({'ID':pd.read_csv('../data/testdata.csv').index,'AveragePrice':prediction})
+  my_submission.to_csv('../result/{}'.format(sub_name),index=False)
   print('A submission file has been made')
 
 predicted_prices = rf_grid.predict(test.to_numpy())
