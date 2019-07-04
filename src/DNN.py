@@ -9,11 +9,12 @@ warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 try:
-    import tensorflow as tf
-    from tensorflow.keras.models import Sequential
-    from tensorflow.keras.layers import Dense, Dropout, Flatten
-    from tensorflow.keras.layers import Conv2D, MaxPooling2D
-    from tensorflow.keras import backend
+    import keras
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout, Flatten
+    from keras.layers import Conv2D, MaxPooling2D
+    from keras import backend as K
+
 except:
     raise ImportError("For this example you need to install keras.")
 
@@ -29,7 +30,7 @@ import ConfigSpace.hyperparameters as CSH
 from hpbandster.core.worker import Worker
 
 import pickle
-
+import array
 
 import hpbandster.core.nameserver as hpns
 import hpbandster.core.result as hpres
@@ -40,16 +41,15 @@ logging.getLogger('hpbandster').setLevel(logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
 
 
-
 def get_data():
     # get train data
-    train_data_path = '../data/traindata.csv'
-    train_label_path = '../data/traindata_label.csv'
+    train_data_path = 'data/traindata.csv'
+    train_label_path = 'data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
 
     # get test data
-    test_data_path = '../data/testdata.csv'
+    test_data_path = 'data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
 
     return train_x, train_y, test_x
@@ -123,6 +123,8 @@ combined = oneHotEncode(combined, cat_cols)
 print('There are {} columns after encoding categorical features'.format(
     combined.shape[1]))
 
+def root_mean_squared_error(y_true, y_pred):
+        return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1)) 
 
 def split_combined():
     global combined
@@ -142,25 +144,14 @@ class KerasWorker(Worker):
         self.batch_size = 64
 
         # the data, split between train and test sets
-        #(x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train, x_test, y_train, y_test = train_test_split(
         train, target, test_size=0.25, random_state=14)
 
-        #x_train = x_train.astype('float32')
-        #x_test = x_test.astype('float32')
 
-        # zero-one normalization
-        #x_train /= 255
-        #x_test /= 255
-
-        # convert class vectors to binary class matrices
-        #y_train = keras.utils.to_categorical(y_train, self.num_classes)
-        #y_test = keras.utils.to_categorical(y_test, self.num_classes)
-
-        self.x_train, self.y_train = x_train.to_numpy(), y_train.to_numpy()
-        self.x_validation, self.y_validation = x_test.to_numpy(), y_test.to_numpy()
-        self.x_test, self.y_test = x_test.to_numpy(), y_test.to_numpy()
-        self.input_shape = x_train.shape[1]
+        self.x_train, self.y_train = x_train.to_numpy().astype('float32'), y_train.to_numpy().astype('float32')
+        #self.x_validation, self.y_validation = x_test.to_numpy().astype('float32'), y_test.to_numpy().astype('float32')
+        self.x_test, self.y_test = x_test.to_numpy().astype('float32'), y_test.to_numpy().astype('float32')
+        self.input_shape = x_train.to_numpy().shape[1]
 
     def compute(self, config, budget, working_directory, *args, **kwargs):
         """
@@ -183,14 +174,13 @@ class KerasWorker(Worker):
         model.add(Dense(1, kernel_initializer='normal', activation='linear'))
 
         if config['optimizer'] == 'Adam':
-            optimizer = tf.keras.optimizers.Adam(lr=config['lr'])
+            optimizer = keras.optimizers.Adam(lr=config['lr'])
         else:
-            optimizer = tf.keras.optimizers.SGD(
+            optimizer = keras.optimizers.SGD(
                 lr=config['lr'], momentum=config['sgd_momentum'])
-
-        model.compile(loss=tf.keras.losses.mean_squared_error,
-                      optimizer=optimizer,
-                      metrics=['accuracy'])
+        
+        model.compile(loss=root_mean_squared_error,
+                      optimizer=optimizer, metrics=['mse'])
 
         model.fit(self.x_train, self.y_train,
                   batch_size=self.batch_size,
@@ -199,16 +189,15 @@ class KerasWorker(Worker):
                   validation_data=(self.x_test, self.y_test))
 
         train_score = model.evaluate(self.x_train, self.y_train, verbose=0)
-        val_score = model.evaluate(
-            self.x_validation, self.y_validation, verbose=0)
+        #val_score = model.evaluate(
+        #    self.x_validation, self.y_validation, verbose=0)
         test_score = model.evaluate(self.x_test, self.y_test, verbose=0)
 
-        #import IPython; IPython.embed()
         return ({
-                'loss': 1-val_score[1],  # remember: HpBandSter always minimizes!
+                'loss': 1-test_score[1],  # remember: HpBandSter always minimizes!
                 'info': {	'test accuracy': test_score[1],
                             'train accuracy': train_score[1],
-                            'validation accuracy': val_score[1],
+                            #'validation accuracy': val_score[1],
                             'number of parameters': model.count_params()
                         }
 
@@ -238,9 +227,9 @@ class KerasWorker(Worker):
         cs.add_hyperparameters([lr, optimizer, sgd_momentum])
 
         num_filters_1 = CSH.UniformIntegerHyperparameter(
-            'num_filters_1', lower=4, upper=64, default_value=16, log=True)
+            'num_filters_1', lower=16, upper=256, default_value=16, log=True)
         num_filters_2 = CSH.UniformIntegerHyperparameter(
-            'num_filters_2', lower=4, upper=64, default_value=16, log=True)
+            'num_filters_2', lower=16, upper=256, default_value=16, log=True)
 
         cs.add_hyperparameters([num_filters_1, num_filters_2])
 
@@ -251,49 +240,6 @@ class KerasWorker(Worker):
 
         return cs
 
-
-if __name__ == "__main__":
-    working_dir = os.curdir
-    # minimum budget that BOHB uses
-    min_budget = 1
-    # largest budget BOHB will use
-    max_budget = 2
-    worker = KerasWorker(run_id='0')
-
-    result_file = os.path.join(working_dir, 'bohb_result.pkl')
-    nic_name = 'lo'
-    port = 0
-    run_id = 'bohb_run_1'
-    n_bohb_iterations = 1
-    
-    
-    try:
-        # Start a nameserver
-        host = hpns.nic_name_to_host(nic_name)
-        ns = hpns.NameServer(run_id=run_id, host=host, port=port,
-                            working_directory=working_dir)
-        ns_host, ns_port = ns.start()
-
-        # Start local worker
-        w = KerasWorker(run_id=run_id, host=host, nameserver=ns_host,
-                        nameserver_port=ns_port, timeout=120)
-        w.run(background=True)
-
-        # Run an optimizer
-        bohb = BOHB(configspace=worker.get_configspace(),
-                    run_id=run_id,
-                    host=host,
-                    nameserver=ns_host,
-                    nameserver_port=ns_port,
-                    min_budget=min_budget, max_budget=max_budget)
-        
-        result = bohb.run(n_iterations=n_bohb_iterations)
-        print("Write result to file {}".format(result_file))
-        with open(result_file, 'wb') as f:
-            pickle.dump(result, f)
-    finally:
-        bohb.shutdown(shutdown_workers=True)
-        ns.shutdown()
 
     # worker = KerasWorker(run_id='0')
     # cs = worker.get_configspace()
@@ -316,7 +262,7 @@ if __name__ == "__main__":
 # NN_model.add(Dense(1, kernel_initializer='normal',activation='linear'))
 
 # # Compile the network :
-# NN_model.compile(loss=tf.keras.metrics.mean_squared_error, optimizer='rmsprop', metrics=[tf.keras.metrics.RootMeanSquaredError(name='rmse')])
+# NN_model.compile(loss=keras.metrics.mean_squared_error, optimizer='rmsprop', metrics=[keras.metrics.RootMeanSquaredError(name='rmse')])
 # NN_model.summary()
 
 
@@ -329,7 +275,7 @@ if __name__ == "__main__":
 # # Load wights file of the best model :
 # wights_file = 'Weights.hdf5' # choose the best checkpoint
 # NN_model.load_weights(wights_file) # load it
-# NN_model.compile(loss=tf.keras.metrics.mean_squared_error, optimizer='adam', metrics=[tf.keras.metrics.RootMeanSquaredError(name='rmse')])
+# NN_model.compile(loss=keras.metrics.mean_squared_error, optimizer='adam', metrics=[keras.metrics.RootMeanSquaredError(name='rmse')])
 
 # def make_submission(prediction, sub_name):
 #   my_submission = pd.DataFrame({'ID':pd.read_csv('../data/testdata.csv').index,'AveragePrice':prediction})
