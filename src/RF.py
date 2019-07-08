@@ -1,7 +1,7 @@
 #imports
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error 
+from sklearn.metrics import mean_squared_error 
 from matplotlib import pyplot as plt
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 import pandas as pd
@@ -11,18 +11,17 @@ warnings.filterwarnings('ignore')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 import os
 from sklearn.externals.joblib import parallel_backend
-
-print(os.listdir('../data'))
+from math import sqrt
 
 def get_data():
     #get train data
-    train_data_path ='../data/traindata.csv'
-    train_label_path = '../data/traindata_label.csv'
+    train_data_path ='/home/nimariahi/automl2019-kaggle/data/traindata.csv'
+    train_label_path = '/home/nimariahi/automl2019-kaggle/data/traindata_label.csv'
     train_x = pd.read_csv(train_data_path)
     train_y = pd.read_csv(train_label_path)
     
     #get test data
-    test_data_path ='../data/testdata.csv'
+    test_data_path ='/home/nimariahi/automl2019-kaggle/data/testdata.csv'
     test_x = pd.read_csv(test_data_path)
     
     return train_x , train_y, test_x
@@ -41,7 +40,8 @@ train_x, target ,test_x = get_data()
 
 #Combine train and test data to process them together
 combined, target = get_combined_data()
-#print(combined.describe())
+
+#Convert the date to the number of week
 combined['Date'] = pd.to_datetime(combined['Date'], format='%Y-%m-%d')
 combined['Date'] = combined['Date'].dt.week
 
@@ -103,19 +103,20 @@ train, test = split_combined()
 train_X, val_X, train_y, val_y = train_test_split(train, target, test_size = 0.05, random_state = 14)
 
 
-rf = RandomForestRegressor()
+rf = RandomForestRegressor(warm_start = True, criterion='mse')
 
-parameters = {'bootstrap': [True, False],
+parameters = {
+ 'bootstrap': [True, False],
  'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
  'max_features': ['auto', 'sqrt'],
  'min_samples_leaf': [1, 2, 4],
  'min_samples_split': [2, 5, 10],
  'n_estimators': [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]}
 
-rf_grid = RandomizedSearchCV( rf,
+
+rf_grid = GridSearchCV( rf,
                         parameters,
-                        n_iter = 100,
-                        cv = 5,
+                        cv = 2,
                         n_jobs = -1,
                         verbose=True)
 
@@ -129,14 +130,14 @@ print(rf_grid.best_params_)
 
 # Get the mean absolute error on the validation data
 predicted_prices = rf_grid.predict(val_X)
-MAE = mean_absolute_error(val_y , predicted_prices)
-print('Random forest validation MAE = ', MAE)
+RMSE = sqrt(mean_squared_error(val_y , predicted_prices))
+print('Random forest validation MSE = ', RMSE)
 
 
 def make_submission(prediction, sub_name):
-  my_submission = pd.DataFrame({'ID':pd.read_csv('../data/testdata.csv').index,'AveragePrice':prediction})
-  my_submission.to_csv('../result/{}'.format(sub_name),index=False)
+  my_submission = pd.DataFrame({'ID':pd.read_csv('/home/nimariahi/automl2019-kaggle/data/testdata.csv').index,'AveragePrice':prediction})
+  my_submission.to_csv('/home/nimariahi/automl2019-kaggle/result/{}'.format(sub_name),index=False)
   print('A submission file has been made')
 
 predicted_prices = rf_grid.predict(test.to_numpy())
-make_submission(predicted_prices,'Submission(RF).csv')
+make_submission(predicted_prices,'(RF).csv')
